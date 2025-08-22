@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Table - Table 2 (Paginated)</title>
+    <link rel="stylesheet" href="table.css">
+    <style>
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 16px 0;
+            user-select: none;
+        }
+        .pager-icon {
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            border: 1px solid #e6e6ea;
+            background: #f6f6fa;
+            color: #333;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04) inset;
+        }
+        .pager-icon:hover:not(:disabled) { background: #efeff7; }
+        .pager-icon:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .page-pill {
+            min-width: 36px;
+            height: 36px;
+            padding: 0 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: #ffffff;
+            border: 1px solid #e6e6ea;
+            color: #444;
+            font-weight: 600;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+    </style>
+    
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-item" onclick="window.location.href='dashboard.html'">Cards 1</div>
+            <div class="sidebar-item" onclick="window.location.href='cards2.html'">Cards 2</div>
+            <div class="sidebar-item" onclick="window.location.href='charts.html'">Charts</div>
+            <div class="sidebar-item" onclick="window.location.href='table.html'">Table 1</div>
+            <div class="sidebar-item active">Table 2</div>
+        </div>
+        
+        <div class="main-content">
+            <!-- Loading State -->
+            <div id="loading-state" class="loading-container">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">Loading data, please wait.</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="error-state" class="error-container" style="display: none;">
+                <div class="error-icon">⚠️</div>
+                <h3 class="error-title">Oops, something went wrong.</h3>
+                <p class="error-message">Please try again.</p>
+                <button class="retry-button" id="retry-button">Retry</button>
+            </div>
+
+            <!-- Data Table -->
+            <div id="table-container" class="table-container" style="display: none;">
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Performance</th>
+                                <th>Balance</th>
+                                <th>Revenue Generated</th>
+                                <th>Date of Birth</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <!-- Data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination-controls">
+                    <button id="first-button" class="pager-icon" aria-label="First page">«</button>
+                    <button id="prev-button" class="pager-icon" aria-label="Previous page">‹</button>
+                    <span id="page-indicator" class="page-pill">1</span>
+                    <button id="next-button" class="pager-icon" aria-label="Next page">›</button>
+                    <button id="last-button" class="pager-icon" aria-label="Last page">»</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let totalPages = null;
+
+        function showLoading() {
+            document.getElementById('loading-state').style.display = 'flex';
+            document.getElementById('error-state').style.display = 'none';
+            document.getElementById('table-container').style.display = 'none';
+        }
+
+        function showError() {
+            document.getElementById('loading-state').style.display = 'none';
+            document.getElementById('error-state').style.display = 'flex';
+            document.getElementById('table-container').style.display = 'none';
+        }
+
+        function showTable() {
+            document.getElementById('loading-state').style.display = 'none';
+            document.getElementById('error-state').style.display = 'none';
+            document.getElementById('table-container').style.display = 'block';
+        }
+
+        function formatLocation(location) {
+            if (location) {
+                return location.replace(/\\,/g, ',');
+            }
+            return 'N/A';
+        }
+
+        function formatCurrency(amount) {
+            if (!amount) return '₹0.00';
+            const numeric = String(amount).replace(/[^0-9.\-]/g, '');
+            const parsed = parseFloat(numeric);
+            if (Number.isNaN(parsed)) return '₹0.00';
+            return `₹${parsed.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
+        function parseApiResponse(responseText) {
+            const lines = responseText.split('\n').filter(line => line.trim());
+            const data = [];
+            for (const line of lines) {
+                if (line.includes('Email:')) {
+                    const person = {};
+                    const parts = line.split(',');
+                    for (const part of parts) {
+                        if (part.includes(':')) {
+                            const [key, value] = part.split(':');
+                            person[key.trim()] = value.trim();
+                        }
+                    }
+                    if (person.Email) {
+                        data.push({
+                            name: person.Email.split('@')[0].replace(/\./g, ' '),
+                            email: person.Email,
+                            location: formatLocation(person.Location || ''),
+                            status: person.Status || 'Unknown',
+                            performance: person.Performance || 'Unknown',
+                            balance: person.Balance || '₹0.00',
+                            revenue: person['Revenue Generated'] || '₹0.00',
+                            dateOfBirth: person['Date of birth'] || 'N/A'
+                        });
+                    }
+                }
+            }
+            return data;
+        }
+
+        function parseMeta(responseText) {
+            const meta = { currentPage: null, totalPages: null };
+            const currentMatch = responseText.match(/Current Page:\s*(\d+)/i);
+            const totalMatch = responseText.match(/Total Pages:\s*(\d+)/i);
+            if (currentMatch) meta.currentPage = parseInt(currentMatch[1], 10);
+            if (totalMatch) meta.totalPages = parseInt(totalMatch[1], 10);
+            return meta;
+        }
+
+        function populateTable(data) {
+            const tableBody = document.getElementById('table-body');
+            tableBody.innerHTML = '';
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.name || 'N/A'}</td>
+                    <td>${row.email || 'N/A'}</td>
+                    <td>${formatLocation(row.location)}</td>
+                    <td><span class="status ${(row.status || 'active').toLowerCase()}">${row.status || 'Active'}</span></td>
+                    <td>${row.performance || 'N/A'}</td>
+                    <td>${formatCurrency(row.balance)}</td>
+                    <td>${formatCurrency(row.revenue)}</td>
+                    <td>${row.dateOfBirth || 'N/A'}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function updatePaginationControls() {
+            const firstBtn = document.getElementById('first-button');
+            const prevBtn = document.getElementById('prev-button');
+            const nextBtn = document.getElementById('next-button');
+            const lastBtn = document.getElementById('last-button');
+            const ind = document.getElementById('page-indicator');
+
+            prevBtn.disabled = currentPage <= 1;
+            firstBtn.disabled = currentPage <= 1;
+            if (totalPages) {
+                const isLast = currentPage >= totalPages;
+                nextBtn.disabled = isLast;
+                lastBtn.disabled = isLast;
+                ind.textContent = `${currentPage}`;
+                lastBtn.style.display = 'inline-flex';
+            } else {
+                nextBtn.disabled = false;
+                lastBtn.disabled = true;
+                ind.textContent = `${currentPage}`;
+                lastBtn.style.display = 'inline-flex';
+            }
+        }
+
+        async function loadPage(page) {
+            currentPage = page;
+            showLoading();
+            try {
+                const url = `http://interview.surya-digital.in/get-people-list?page=${currentPage}`;
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const responseText = await response.text();
+                const data = parseApiResponse(responseText);
+                const meta = parseMeta(responseText);
+                if (meta.totalPages) totalPages = meta.totalPages;
+                if (meta.currentPage) currentPage = meta.currentPage;
+
+                if (data && data.length > 0) {
+                    populateTable(data);
+                    showTable();
+                    updatePaginationControls();
+                } else {
+                    // If no data returned, assume last page reached
+                    if (!totalPages) {
+                        totalPages = currentPage;
+                    }
+                    updatePaginationControls();
+                    populateTable([]);
+                    showTable();
+                }
+            } catch (error) {
+                console.error('Error loading paginated data:', error);
+                showError();
+            }
+        }
+
+        function attachEvents() {
+            document.getElementById('first-button').onclick = () => {
+                if (currentPage !== 1) loadPage(1);
+            };
+            document.getElementById('prev-button').onclick = () => {
+                if (currentPage > 1) loadPage(currentPage - 1);
+            };
+            document.getElementById('next-button').onclick = () => {
+                if (!totalPages || currentPage < totalPages) loadPage(currentPage + 1);
+            };
+            document.getElementById('last-button').onclick = () => {
+                if (totalPages && currentPage !== totalPages) loadPage(totalPages);
+            };
+            document.getElementById('retry-button').onclick = () => loadPage(currentPage || 1);
+        }
+
+        window.onload = function() {
+            attachEvents();
+            updatePaginationControls();
+            loadPage(1);
+        };
+    </script>
+</body>
+</html>
+
+

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Charts Dashboard</title>
+  <link rel="stylesheet" href="charts.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="sidebar">
+      <div class="sidebar-item" onclick="window.location.href='dashboard.html'">Cards 1</div>
+      <div class="sidebar-item" onclick="window.location.href='cards2.html'">Cards 2</div>
+      <div class="sidebar-item active">Charts</div>
+      <div class="sidebar-item" onclick="window.location.href='table.html'">Table 1</div>
+      <div class="sidebar-item" onclick="window.location.href='table2.html'">Table 2</div>
+    </div>
+    
+    <div class="main-content">
+      <div class="charts-grid">
+        
+        <!-- Sale By Device Bar Chart -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3 class="chart-title">Sale By Device</h3>
+            <div class="chart-date">Jan 2025 - May 2025</div>
+          </div>
+          <div class="chart-container">
+            <canvas id="barChart" width="400" height="300"></canvas>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-color mobile"></div><span>Mobile</span></div>
+            <div class="legend-item"><div class="legend-color desktop"></div><span>Desktop</span></div>
+          </div>
+        </div>
+
+        <!-- Revenue Contribution Pie Chart -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3 class="chart-title">Revenue Contribution</h3>
+            <div class="chart-date">Jan 2025 - May 2025</div>
+          </div>
+          <div class="chart-container">
+            <canvas id="pieChart" width="400" height="300"></canvas>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-color jan"></div><span>Jan</span></div>
+            <div class="legend-item"><div class="legend-color feb"></div><span>Feb</span></div>
+            <div class="legend-item"><div class="legend-color mar"></div><span>Mar</span></div>
+            <div class="legend-item"><div class="legend-color apr"></div><span>Apr</span></div>
+            <div class="legend-item"><div class="legend-color may"></div><span>May</span></div>
+            <div class="legend-item"><div class="legend-color may"></div><span>June</span></div>
+            <div class="legend-item"><div class="legend-color may"></div><span>July</span></div>
+          </div>
+        </div>
+
+        <!-- Sales Trend Line Chart -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3 class="chart-title">Sales Trend</h3>
+            <div class="chart-date">Jan 2025 - July 2025</div>
+          </div>
+          <div class="chart-container">
+            <canvas id="lineChart" width="400" height="300"></canvas>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Bar Chart - Sale By Device
+    const barCtx = document.getElementById('barChart').getContext('2d');
+    new Chart(barCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May','June','July'],
+        datasets: [
+          {
+            label: 'Mobile',
+            data: [80, 70, 60, 85, 80, 90, 55],
+            backgroundColor: 'rgba(147, 112, 219, 0.25)',
+            borderColor: 'rgba(147, 112, 219, 0.25)',
+            borderRadius: 10,
+            borderSkipped: false
+          },
+          {
+            label: 'Desktop',
+            data: [100, 90, 70, 95, 100, 90, 55],
+            backgroundColor: '#8E7AE6',
+            borderColor: '#8E7AE6',
+            borderRadius: 10,
+            borderSkipped: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, max: 120 },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+
+    // Pie Chart - Revenue Contribution
+    const pieCtx = document.getElementById('pieChart').getContext('2d');
+    new Chart(pieCtx, {
+      type: 'pie',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May','June','July'],
+        datasets: [{
+          data: [18000, 28000, 12000, 22000, 20000, 25000, 30000],
+          backgroundColor: ['#EAE7FB','#DCD3FA','#C6BBF7','#B2A4F2','#8E7AE6','#6E5AD6','#5543B5'],
+          borderWidth: 0,
+          hoverOffset: 6
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    // Line Chart - Sales Trend
+    const lineCtx = document.getElementById('lineChart').getContext('2d');
+    new Chart(lineCtx, {
+      type: 'line',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May','June','July'],
+        datasets: [
+          {
+            label: 'Mobile Sales',
+            data: [80, 70, 60, 85, 80, 90, 55],
+            borderColor: '#8E7AE6',
+            backgroundColor: 'rgba(142, 122, 230, 0.2)',
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#8E7AE6'
+          },
+          {
+            label: 'Desktop Sales',
+            data: [100, 90, 70, 95, 100, 90, 55],
+            borderColor: '#4B0082',
+            backgroundColor: 'rgba(75, 0, 130, 0.2)',
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#4B0082'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: true } },
+        scales: {
+          y: { beginAtZero: true, max: 120 },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

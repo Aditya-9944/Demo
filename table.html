@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Table - Table 1</title>
+    <link rel="stylesheet" href="table.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-item" onclick="window.location.href='dashboard.html'">Cards 1</div>
+            <div class="sidebar-item" onclick="window.location.href='cards2.html'">Cards 2</div>
+            <div class="sidebar-item" onclick="window.location.href='charts.html'">Charts</div>
+            <div class="sidebar-item active">Table 1</div>
+            <div class="sidebar-item" onclick="window.location.href='table2.html'">Table 2</div>
+        </div>
+        
+        <div class="main-content">
+            <!-- Loading State -->
+            <div id="loading-state" class="loading-container">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">Loading data, please wait.</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="error-state" class="error-container" style="display: none;">
+                <div class="error-icon">⚠️</div>
+                <h3 class="error-title">Oops, something went wrong.</h3>
+                <p class="error-message">Please try again.</p>
+                <button class="retry-button" onclick="loadData()">Retry</button>
+            </div>
+
+            <!-- Data Table -->
+            <div id="table-container" class="table-container" style="display: none;">
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Performance</th>
+                                <th>Balance</th>
+                                <th>Revenue Generated</th>
+                                <th>Date of Birth</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <!-- Data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to show loading state
+        function showLoading() {
+            document.getElementById('loading-state').style.display = 'flex';
+            document.getElementById('error-state').style.display = 'none';
+            document.getElementById('table-container').style.display = 'none';
+        }
+
+        // Function to show error state
+        function showError() {
+            document.getElementById('loading-state').style.display = 'none';
+            document.getElementById('error-state').style.display = 'flex';
+            document.getElementById('table-container').style.display = 'none';
+        }
+
+        // Function to show table
+        function showTable() {
+            document.getElementById('loading-state').style.display = 'none';
+            document.getElementById('error-state').style.display = 'none';
+            document.getElementById('table-container').style.display = 'block';
+        }
+
+        // Function to format location (handle escaped commas)
+        function formatLocation(location) {
+            if (location) {
+                // Replace escaped commas with regular commas
+                return location.replace(/\\,/g, ',');
+            }
+            return 'N/A';
+        }
+
+        // Function to format currency
+        function formatCurrency(amount) {
+            if (!amount) return '₹0.00';
+            const numeric = String(amount).replace(/[^0-9.\-]/g, '');
+            const parsed = parseFloat(numeric);
+            if (Number.isNaN(parsed)) return '₹0.00';
+            return `₹${parsed.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
+        function parseApiResponse(responseText) {
+            const lines = responseText.split('\n').filter(line => line.trim());
+            const data = [];
+            
+            for (const line of lines) {
+                if (line.includes('Email:')) {
+                    const person = {};
+                    const parts = line.split(',');
+                    
+                    for (const part of parts) {
+                        if (part.includes(':')) {
+                            const [key, value] = part.split(':');
+                            person[key.trim()] = value.trim();
+                        }
+                    }
+                    
+                    if (person.Email) {
+                        data.push({
+                            name: person.Email.split('@')[0].replace(/\./g, ' '),
+                            email: person.Email,
+                            location: formatLocation(person.Location || ''),
+                            status: person.Status || 'Unknown',
+                            performance: person.Performance || 'Unknown',
+                            balance: person.Balance || '₹0.00',
+                            revenue: person['Revenue Generated'] || '₹0.00',
+                            dateOfBirth: person['Date of birth'] || 'N/A'
+                        });
+                    }
+                }
+            }
+            
+            return data;
+        }
+
+        // Function to populate table
+        function populateTable(data) {
+            const tableBody = document.getElementById('table-body');
+            tableBody.innerHTML = '';
+
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.name || 'N/A'}</td>
+                    <td>${row.email || 'N/A'}</td>
+                    <td>${formatLocation(row.location)}</td>
+                    <td><span class="status ${(row.status || 'active').toLowerCase()}">${row.status || 'Active'}</span></td>
+                    <td>${row.performance || 'N/A'}</td>
+                    <td>${formatCurrency(row.balance)}</td>
+                    <td>${formatCurrency(row.revenue)}</td>
+                    <td>${row.dateOfBirth || 'N/A'}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // Function to load data from API
+        async function loadData() {
+            showLoading();
+            
+            try {
+                const response = await fetch('http://interview.surya-digital.in/get-people-list');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const responseText = await response.text();
+                const data = parseApiResponse(responseText);
+                
+                if (data && data.length > 0) {
+                    populateTable(data);
+                    showTable();
+                } else {
+                    throw new Error('No data found');
+                }
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showError();
+            }
+        }
+
+        // Load data when page loads
+        window.onload = function() {
+            loadData();
+        };
+    </script>
+</body>
+</html>
